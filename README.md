@@ -238,6 +238,12 @@ Keep the price from the previous valid oracle version and use it instead of orac
 
 @nevillehuang The comment was meant for issue #7, somehow got mixed up with this one. This issue is valid.
 
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/301
+
+
 # Issue H-2: Requested oracle versions, which have expired, must return this oracle version as invalid, but they return it as a normal version with previous version's price instead 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/6 
@@ -330,92 +336,13 @@ Add validity map along with the price map to `KeeperOracle` when recording commi
 
 I'm not entirely sure how the stablecoin in use matters here? Returning an invalid versions as valid can be very detrimental in markets where invalid versions can be triggered at will (such as in markets that close) which can result in users being able to open or close positions when they shouldn't be able to
 
-# Issue H-3: MultiInvoker's stored TriggerOrders are not migrated to new format, potentially causing huge interface fees charged to users. 
+**sherlock-admin4**
 
-Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/12 
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/308
 
-## Found by 
-bin2chen, panprog
-## Summary
 
-`TriggerOrder` struct which is used to store orders in `MultiInvoker` has changed in v2.3 compared to v2.2, however, there is no migration process for these orders mentioned in the [Migration Guide](https://github.com/equilibria-xyz/perennial-v2/blob/22ba19c323a13c9f02f95db6747d137a3bf1277a/runbooks/MIGRATION_v2.2.md), meaning there might be problems with existing v2.2 orders, in particular:
-- previous version's `interfaceFeeAmount` is now in unused area (meaning interfaces won't receive fees for these orders)
-- previous version's `interfaceFeeUnwrap` collides with the new version's `interfaceFeeAmount1` (meaning that if existing order had `interfaceFeeUnwrap = true`, the new version will handle it as a 2^40 fee value (in UFixed6 format 2^40 = ~1.1M USDC), charging huge interface fee from unsuspecting users when the order executes). This will likely revert for insufficient funds to pay the fee, but if the user does have 1.1M+ collateral, this huge amount will be charged to interface fee for order exectution.
-- new version's `interfaceFeeUnwrap` are in the previously unallocated area, meaning it will be `false` for all previous orders, potentially creating problems/funds loss for interfaces which can't handle DSU token and needed underlying (USDC) instead.
-
-## Vulnerability Detail
-
-Previous version's `TriggerOrder`:
-```solidity
-struct StoredTriggerOrder {
-    /* slot 0 */
-    uint8 side;                // 0 = maker, 1 = long, 2 = short, 3 = collateral
-    int8 comparison;           // -2 = lt, -1 = lte, 0 = eq, 1 = gte, 2 = gt
-    uint64 fee;                // <= 18.44tb
-    int64 price;               // <= 9.22t
-    int64 delta;               // <= 9.22t
-    uint48 interfaceFeeAmount; // <= 281m
-
-    /* slot 1 */
-    address interfaceFeeReceiver;
-    bool interfaceFeeUnwrap;
-    bytes11 __unallocated0__;
-}
-```
-
-New version's `TriggerOrder`:
-```solidity
-struct StoredTriggerOrder {
-    /* slot 0 */
-    uint8 side;         // 0 = maker, 1 = long, 2 = short
-    int8 comparison;    // -2 = lt, -1 = lte, 0 = eq, 1 = gte, 2 = gt
-    uint64 fee;         // <= 18.44tb
-    int64 price;        // <= 9.22t
-    int64 delta;        // <= 9.22t
-    bytes6 __unallocated0__; // @audit existing orders interfaceFeeAmount will be there
-
-    /* slot 1 */
-    address interfaceFeeReceiver1;
-    uint48 interfaceFeeAmount1;      // <= 281m @audit existing orders unwrap flag here (in the high order byte), thus either 0 or 2^40 for existing orders
-    bool interfaceFeeUnwrap1;   // @audit previously unallocated, thus false for all existing orders
-    bytes5 __unallocated1__;
-
-    /* slot 2 */
-    address interfaceFeeReceiver2;
-    uint48 interfaceFeeAmount2;      // <= 281m
-    bool interfaceFeeUnwrap2;
-    bytes5 __unallocated2__;
-}
-```
-
-Notice the @audit remarks in the code. When existing v2.2 orders will be executed in v2.3 code, the overlapping fields in slot1 will cause incorrect values for these orders.
-
-## Impact
-
-For existing orders with interface fee specified:
-- if `interfaceFeeUnwrap` was set to `true`, fee charged will be 2^40 (==~1.1M USDC), unexpected fee amount for the user. Additionally, `interfaceFeeUnwrap` will be treated as `false`, thus interface will receive this fee of 2^40 as DSU rather than underlying (USDC).
-- if `interfaceFeeUnwrap` was set to `false`, fee charged will be 0, fee funds lost by the interfaceFee account which expected to receive it.
-
-## Code Snippet
-
-Previous version of `TriggerOrder`:
-https://github.com/equilibria-xyz/perennial-v2/blob/7e60e69de9a613bfb449dc976801a000daa72aa4/packages/perennial-extensions/contracts/types/TriggerOrder.sol#L18-L31
-
-New version of `TriggerOrder`:
-https://github.com/sherlock-audit/2024-02-perennial-v2-3/blob/main/perennial-v2/packages/perennial-extensions/contracts/types/TriggerOrder.sol#L19-L39
-
-## Tool used
-
-Manual Review
-
-## Recommendation
-
-Possible solutions:
-- refactor new `TriggerOrder` format to avoid fields collision (and carry over all values from existing orders)
-- include version id in the struct and read differently depending on version
-- clear all pending orders during migration (and let users know beforehand that all orders will be cancelled in the new version)
-
-# Issue H-4: Vault global shares and assets change will mismatch local shares and assets change during settlement due to incorrect `_withoutSettlementFeeGlobal` formula 
+# Issue H-3: Vault global shares and assets change will mismatch local shares and assets change during settlement due to incorrect `_withoutSettlementFeeGlobal` formula 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/26 
 
@@ -483,9 +410,21 @@ Manual Review
 
 Calculate total orders to deposit and total orders to redeem (in addition to total orders overall). Then `settlementFee` should be multiplied by `deposit/orders` for `toGlobalShares` and by `redeems/orders` for `toGlobalAssets`. This weightening of `settlementFee` will make it in-line with local order weights.
 
+
+
+## Discussion
+
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/305
+
+
 # Issue M-1: When vault's market weight is set to 0 to remove the market from the vault, vault's leverage in this market is immediately set to max leverage risking position liquidation 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/8 
+
+The protocol has acknowledged this issue.
 
 ## Found by 
 panprog
@@ -807,6 +746,16 @@ Split the total maker exposure by individual maker's exposure rather than by the
 - Add individual maker `exposure` to user's `Local` storage
 - When accumulating local storage in the checkpoint, account global accumulator exposure weighted by individual user's exposure.
 
+
+
+## Discussion
+
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/300
+
+
 # Issue M-3: Orders on Optimism chains can not be settled due to revert of ````keep()```` 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/10 
@@ -904,6 +853,16 @@ Manual Review
 
 ## Recommendation
 reference: https://docs.optimism.io/stack/transactions/fees#ecotone
+
+
+
+## Discussion
+
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/root/pull/90
+
 
 # Issue M-4: All transactions to claim assets from the vault will revert in some situations due to double subtraction of the claimed assets in market position allocations calculation. 
 
@@ -1013,6 +972,16 @@ Manual Review
 ## Recommendation
 
 Remove `add(withdrawal)` from `_ineligable` calculation in the vault.
+
+
+
+## Discussion
+
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/303
+
 
 # Issue M-5: If referral or liquidator is the same address as the account, then liquidation/referral fees will be lost due to local storage being overwritten after the `claimable` amount is credited to liquidator or referral 
 
@@ -1154,6 +1123,12 @@ Modify `Market._credit` function to increase `context.local.claimable` if accoun
 
 
 
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/302
+
+
 # Issue M-6: _loadContext() uses the wrong pendingGlobal. 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/17 
@@ -1231,6 +1206,12 @@ Manual Review
 **takarez** commented:
 >  the reason for it should have been said.
 
+
+
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/299
 
 
 # Issue M-7: Liquidator can set up referrals for other users 
@@ -1387,6 +1368,12 @@ So there is no issue with liquidators. Even though the liquidators map will be s
 
 And the impact for the issue described here I think is medium, not high.
 
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/297
+
+
 # Issue M-8: Vault and oracle keepers DoS in some situations due to `market.update(account,max,max,max,0,false)` 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/23 
@@ -1472,6 +1459,16 @@ Depending on intended functionality:
 1. Ignore the margin requirement for empty orders and collateral change which is >= 0.
 **AND/OR**
 2. Use `Market.settle` instead of `Market.update` to settle accounts, specifically in `KeeperOracle._settle` and in `Vault._updateUnderlying`. There doesn't seem to be any reason or issue to use `settle` instead of `update`, it seems that `update` is there just because there was no `settle` function available before.
+
+
+
+## Discussion
+
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/309
+
 
 # Issue M-9: Vault checkpoints slightly incorrect conversion from assets to shares leads to slow loss of funds for long-time vault depositors 
 
@@ -1591,6 +1588,12 @@ Re-work the assets to shares conversion in vault checkpoint to use the correct f
 
 
 
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/304
+
+
 # Issue M-10: ChainlinkFactory will pay non-requested versions keeper fees 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/32 
@@ -1675,5 +1678,11 @@ It is recommended that only `Requested versions`  keeper fees'
 **panprog** commented:
 > valid medium, the attacker will have to commit requested along with unrequested which might not be easy to do due to competition
 
+
+
+**sherlock-admin4**
+
+The protocol team fixed this issue in the following PRs/commits:
+https://github.com/equilibria-xyz/perennial-v2/pull/293
 
 
