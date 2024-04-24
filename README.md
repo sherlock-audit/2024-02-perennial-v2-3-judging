@@ -244,6 +244,10 @@ The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/301
 
 
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
+
 # Issue H-2: Requested oracle versions, which have expired, must return this oracle version as invalid, but they return it as a normal version with previous version's price instead 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/6 
@@ -342,6 +346,10 @@ The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/308
 
 
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
+
 # Issue H-3: Vault global shares and assets change will mismatch local shares and assets change during settlement due to incorrect `_withoutSettlementFeeGlobal` formula 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/26 
@@ -419,6 +427,10 @@ Calculate total orders to deposit and total orders to redeem (in addition to tot
 The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/305
 
+
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
 
 # Issue M-1: When vault's market weight is set to 0 to remove the market from the vault, vault's leverage in this market is immediately set to max leverage risking position liquidation 
 
@@ -756,6 +768,10 @@ The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/300
 
 
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
+
 # Issue M-3: Orders on Optimism chains can not be settled due to revert of ````keep()```` 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/10 
@@ -863,6 +879,10 @@ reference: https://docs.optimism.io/stack/transactions/fees#ecotone
 The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/root/pull/90
 
+
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
 
 # Issue M-4: All transactions to claim assets from the vault will revert in some situations due to double subtraction of the claimed assets in market position allocations calculation. 
 
@@ -982,6 +1002,10 @@ Remove `add(withdrawal)` from `_ineligable` calculation in the vault.
 The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/303
 
+
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
 
 # Issue M-5: If referral or liquidator is the same address as the account, then liquidation/referral fees will be lost due to local storage being overwritten after the `claimable` amount is credited to liquidator or referral 
 
@@ -1129,6 +1153,10 @@ The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/302
 
 
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
+
 # Issue M-6: _loadContext() uses the wrong pendingGlobal. 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/17 
@@ -1213,6 +1241,10 @@ Manual Review
 The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/299
 
+
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
 
 # Issue M-7: Liquidator can set up referrals for other users 
 
@@ -1374,6 +1406,10 @@ The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/297
 
 
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
+
 # Issue M-8: Vault and oracle keepers DoS in some situations due to `market.update(account,max,max,max,0,false)` 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/23 
@@ -1469,6 +1505,10 @@ Depending on intended functionality:
 The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/309
 
+
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
 
 # Issue M-9: Vault checkpoints slightly incorrect conversion from assets to shares leads to slow loss of funds for long-time vault depositors 
 
@@ -1594,6 +1634,10 @@ The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/304
 
 
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
+
 # Issue M-10: ChainlinkFactory will pay non-requested versions keeper fees 
 
 Source: https://github.com/sherlock-audit/2024-02-perennial-v2-3-judging/issues/32 
@@ -1685,4 +1729,8 @@ It is recommended that only `Requested versions`  keeper fees'
 The protocol team fixed this issue in the following PRs/commits:
 https://github.com/equilibria-xyz/perennial-v2/pull/293
 
+
+**sherlock-admin4**
+
+The Lead Senior Watson signed off on the fix.
 
